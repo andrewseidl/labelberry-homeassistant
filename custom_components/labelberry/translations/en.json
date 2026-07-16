@@ -1,0 +1,66 @@
+{
+  "config": {
+    "abort": {
+      "reconfigure_successful": "LabelBerry configuration updated.",
+      "single_instance_allowed": "Only one LabelBerry server can be configured."
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the LabelBerry server.",
+      "invalid_response": "The server did not return a compatible LabelBerry response."
+    },
+    "step": {
+      "reconfigure": {
+        "data": {
+          "url": "Server URL"
+        },
+        "description": "Change the LabelBerry server used by Home Assistant.",
+        "title": "Reconfigure LabelBerry"
+      },
+      "user": {
+        "data": {
+          "url": "Server URL"
+        },
+        "description": "Enter the full URL of your LabelBerry server.",
+        "title": "Connect to LabelBerry"
+      }
+    }
+  },
+  "exceptions": {
+    "backend_error": {
+      "message": "LabelBerry rejected the print: {error}"
+    },
+    "cannot_connect": {
+      "message": "Unable to connect to the LabelBerry server."
+    },
+    "invalid_response": {
+      "message": "LabelBerry returned an unexpected response."
+    },
+    "not_configured": {
+      "message": "LabelBerry must be configured and loaded before printing."
+    }
+  },
+  "services": {
+    "print_label": {
+      "description": "Queue a centered label on the configured LabelBerry printer.",
+      "fields": {
+        "copies": {
+          "description": "Number of identical labels to print.",
+          "name": "Copies"
+        },
+        "left": {
+          "description": "Optional Unicode text or emoji on the left.",
+          "name": "Left flank"
+        },
+        "right": {
+          "description": "Optional Unicode text or emoji on the right.",
+          "name": "Right flank"
+        },
+        "text": {
+          "description": "Centered label text. Newlines create multiple centered lines.",
+          "name": "Text"
+        }
+      },
+      "name": "Print label"
+    }
+  }
+}
