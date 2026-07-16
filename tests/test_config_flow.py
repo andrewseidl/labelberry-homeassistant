@@ -24,10 +24,16 @@ async def test_user_flow_shows_form(hass) -> None:
 
 
 async def test_user_flow_creates_normalized_entry(hass) -> None:
-    with patch(
-        "custom_components.labelberry.config_flow.LabelBerryClient.async_get_status",
-        new=AsyncMock(return_value=STATUS),
-    ) as get_status:
+    with (
+        patch(
+            "custom_components.labelberry.config_flow.LabelBerryClient.async_get_status",
+            new=AsyncMock(return_value=STATUS),
+        ) as get_status,
+        patch(
+            "custom_components.labelberry.async_setup_entry",
+            new=AsyncMock(return_value=True),
+        ),
+    ):
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={"source": config_entries.SOURCE_USER},

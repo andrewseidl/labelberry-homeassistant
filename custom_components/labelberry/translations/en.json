@@ -39,6 +39,17 @@
       "message": "LabelBerry must be configured and loaded before printing."
     }
   },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "connected": "Connected",
+          "disconnected": "Disconnected"
+        }
+      }
+    }
+  },
   "services": {
     "print_label": {
       "description": "Queue a centered label on the configured LabelBerry printer.",
