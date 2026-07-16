@@ -1,0 +1,28 @@
+print_label:
+  fields:
+    text:
+      required: true
+      example: "Cold\nWash"
+      selector:
+        text:
+          multiline: true
+    left:
+      required: false
+      example: "🧺"
+      selector:
+        text: {}
+    right:
+      required: false
+      example: "🌬️"
+      selector:
+        text: {}
+    copies:
+      required: false
+      default: 1
+      example: 1
+      selector:
+        number:
+          min: 1
+          max: 100
+          step: 1
+          mode: box
