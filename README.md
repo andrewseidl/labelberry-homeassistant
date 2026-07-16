@@ -111,3 +111,7 @@ uv run pytest
 ```
 
 Runtime code uses only dependencies already bundled with Home Assistant.
+
+## License
+
+LabelBerry for Home Assistant is available under the [MIT License](LICENSE).

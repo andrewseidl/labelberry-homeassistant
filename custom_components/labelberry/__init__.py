@@ -19,6 +19,8 @@ from .api import (
 from .const import CONF_URL, DOMAIN, PLATFORMS, SERVICE_PRINT_LABEL
 from .coordinator import LabelBerryCoordinator
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 PRINT_LABEL_SCHEMA = vol.Schema(
     {
         vol.Required("text"): vol.All(cv.string, vol.Length(min=1)),

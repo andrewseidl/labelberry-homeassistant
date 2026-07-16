@@ -25,8 +25,22 @@ def test_hacs_repository_metadata_is_complete() -> None:
         "single_config_entry": True,
         "version": "0.1.0",
     }
+    assert list(manifest) == [
+        "domain",
+        "name",
+        "codeowners",
+        "config_flow",
+        "documentation",
+        "integration_type",
+        "iot_class",
+        "issue_tracker",
+        "requirements",
+        "single_config_entry",
+        "version",
+    ]
     assert hacs == {"homeassistant": "2026.7.0", "name": "LabelBerry"}
     assert (INTEGRATION / "brand" / "icon.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    assert (ROOT / "LICENSE").read_text().startswith("MIT License\n")
 
 
 def test_python_floor_matches_home_assistant() -> None:
@@ -59,6 +73,10 @@ def test_github_workflows_cover_tests_and_distribution_validation() -> None:
     assert "uv run ruff format --check ." in test_commands
     assert "uv run pytest" in test_commands
 
+    test_actions = {step.get("uses") for step in test_steps}
+    assert "actions/checkout@v6" in test_actions
+    assert "astral-sh/setup-uv@v8" in test_actions
+
     validate_steps = [
         step for job in validate_workflow["jobs"].values() for step in job.get("steps", [])
     ]
@@ -67,3 +85,4 @@ def test_github_workflows_cover_tests_and_distribution_validation() -> None:
     assert any(
         step.get("uses") == "home-assistant/actions/hassfest@master" for step in validate_steps
     )
+    assert any(step.get("uses") == "actions/checkout@v6" for step in validate_steps)

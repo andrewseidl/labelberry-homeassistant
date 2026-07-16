@@ -3,12 +3,17 @@ from unittest.mock import AsyncMock, patch
 from homeassistant.config_entries import ConfigEntryState
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+import custom_components.labelberry as labelberry
 from custom_components.labelberry import LabelBerryRuntimeData
 from custom_components.labelberry.api import LabelBerryConnectionError, LabelBerryStatus
 from custom_components.labelberry.const import CONF_URL, DOMAIN, SCAN_INTERVAL_SECONDS
 
 BASE_URL = "http://labelberry.local:8000"
 STATUS = LabelBerryStatus(connected=True, tape_width_mm=12.0, backend="usb")
+
+
+def test_config_schema_allows_config_entry_only_setup() -> None:
+    assert labelberry.CONFIG_SCHEMA({}) == {}
 
 
 async def test_setup_stores_runtime_data_and_unloads(hass) -> None:
