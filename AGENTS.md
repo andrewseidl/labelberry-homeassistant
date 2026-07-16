@@ -6,10 +6,14 @@ This is the public Home Assistant integration repository for LabelBerry:
 ## Repository access
 
 - The canonical GitHub repository is `andrewseidl/labelberry-homeassistant`.
-- Write access is available through the authenticated GitHub CLI (`gh`) and the HTTPS
-  Git credential helper used by this checkout.
-- The SSH key `~/.ssh/agents-labelberry` is scoped to the original
-  `andrewseidl/labelberry` repository, not this repository.
+- Git write access uses the deploy key `~/.ssh/agents-labelberry-homeassistant`. New
+  standalone clones should configure the same key:
+
+  ```sh
+  git config core.sshCommand "ssh -i /home/andrew/.ssh/agents-labelberry-homeassistant -o IdentitiesOnly=yes"
+  ```
+- The SSH key `~/.ssh/agents-labelberry` remains scoped to the original
+  `andrewseidl/labelberry` repository and cannot be reused here.
 - Push small, verified checkpoints frequently. Do not leave completed work only in a
   local branch.
 - Use a Git worktree for isolated feature work when the main checkout is occupied.
