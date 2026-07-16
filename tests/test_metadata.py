@@ -75,7 +75,7 @@ def test_github_workflows_cover_tests_and_distribution_validation() -> None:
 
     test_actions = {step.get("uses") for step in test_steps}
     assert "actions/checkout@v6" in test_actions
-    assert "astral-sh/setup-uv@v8" in test_actions
+    assert "astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b" in test_actions
 
     validate_steps = [
         step for job in validate_workflow["jobs"].values() for step in job.get("steps", [])
