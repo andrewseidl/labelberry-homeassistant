@@ -2,6 +2,8 @@ import json
 import tomllib
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).parents[1]
 INTEGRATION = ROOT / "custom_components" / "labelberry"
 
@@ -31,3 +33,37 @@ def test_python_floor_matches_home_assistant() -> None:
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
 
     assert pyproject["project"]["requires-python"] == ">=3.14.2"
+
+
+def test_distribution_documentation_is_complete() -> None:
+    readme = (ROOT / "README.md").read_text()
+
+    assert "https://github.com/andrewseidl/labelberry-homeassistant" in readme
+    assert "labelberry.print_label" in readme
+    assert "left" in readme
+    assert "right" in readme
+    assert "text: |\n    Cold\n    Wash" in readme
+    assert not (INTEGRATION / "strings.json").exists()
+
+
+def test_github_workflows_cover_tests_and_distribution_validation() -> None:
+    test_workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "test.yml").read_text())
+    validate_workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "validate.yml").read_text()
+    )
+
+    test_steps = test_workflow["jobs"]["test"]["steps"]
+    test_commands = "\n".join(step.get("run", "") for step in test_steps)
+    assert "uv sync --frozen" in test_commands
+    assert "uv run ruff check ." in test_commands
+    assert "uv run ruff format --check ." in test_commands
+    assert "uv run pytest" in test_commands
+
+    validate_steps = [
+        step for job in validate_workflow["jobs"].values() for step in job.get("steps", [])
+    ]
+    hacs_step = next(step for step in validate_steps if step.get("uses") == "hacs/action@main")
+    assert hacs_step["with"]["category"] == "integration"
+    assert any(
+        step.get("uses") == "home-assistant/actions/hassfest@master" for step in validate_steps
+    )
