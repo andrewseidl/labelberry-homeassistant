@@ -13,7 +13,12 @@ from custom_components.labelberry.api import (
     LabelBerryStatus,
     QueuedJob,
 )
-from custom_components.labelberry.const import CONF_URL, DOMAIN, SERVICE_PRINT_LABEL
+from custom_components.labelberry.const import (
+    CONF_URL,
+    DOMAIN,
+    SERVICE_PRINT_LABEL,
+    SERVICE_PRINT_TEMPLATE,
+)
 
 BASE_URL = "http://labelberry.local:8000"
 STATUS = LabelBerryStatus(connected=True, tape_width_mm=12.0, backend="usb")
@@ -106,3 +111,88 @@ async def test_print_action_surfaces_errors_without_retry(hass, error, message) 
         )
 
     entry.runtime_data.client.async_quick_print.assert_awaited_once()
+
+
+async def test_print_template_action_dispatches_once(hass) -> None:
+    entry = await _setup_entry(hass)
+    entry.runtime_data.client.async_print_template = AsyncMock(return_value=JOB)
+
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_PRINT_TEMPLATE,
+        {"template": "Leftovers", "variables": {"food": "Curry"}, "copies": 2},
+        blocking=True,
+    )
+
+    entry.runtime_data.client.async_print_template.assert_awaited_once_with(
+        "Leftovers", {"food": "Curry"}, copies=2
+    )
+
+
+async def test_print_template_action_defaults_variables_and_copies(hass) -> None:
+    entry = await _setup_entry(hass)
+    entry.runtime_data.client.async_print_template = AsyncMock(return_value=JOB)
+
+    await hass.services.async_call(
+        DOMAIN, SERVICE_PRINT_TEMPLATE, {"template": "Leftovers"}, blocking=True
+    )
+
+    entry.runtime_data.client.async_print_template.assert_awaited_once_with(
+        "Leftovers", {}, copies=1
+    )
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {"template": ""},
+        {"template": "T", "variables": []},
+        {"template": "T", "variables": {1: "x"}},
+        {"template": "T", "variables": {"x": 1}},
+        {"template": "T", "copies": 0},
+        {"template": "T", "copies": 101},
+    ],
+)
+async def test_print_template_rejects_invalid_fields(hass, data) -> None:
+    entry = await _setup_entry(hass)
+    entry.runtime_data.client.async_print_template = AsyncMock(return_value=JOB)
+
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(DOMAIN, SERVICE_PRINT_TEMPLATE, data, blocking=True)
+
+    entry.runtime_data.client.async_print_template.assert_not_awaited()
+
+
+async def test_print_template_requires_loaded_entry(hass) -> None:
+    assert await async_setup_component(hass, DOMAIN, {})
+
+    with pytest.raises(ServiceValidationError, match="configured and loaded"):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_PRINT_TEMPLATE,
+            {"template": "Leftovers"},
+            blocking=True,
+        )
+
+
+@pytest.mark.parametrize(
+    ("error", "message"),
+    [
+        (LabelBerryConnectionError("offline"), "Unable to reach"),
+        (LabelBerryResponseError("bad JSON"), "unexpected response"),
+        (LabelBerryBackendError("render_error", "too wide", 422), "render_error: too wide"),
+    ],
+)
+async def test_print_template_surfaces_errors_without_retry(hass, error, message) -> None:
+    entry = await _setup_entry(hass)
+    entry.runtime_data.client.async_print_template = AsyncMock(side_effect=error)
+
+    with pytest.raises(HomeAssistantError, match=message):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_PRINT_TEMPLATE,
+            {"template": "Leftovers"},
+            blocking=True,
+        )
+
+    entry.runtime_data.client.async_print_template.assert_awaited_once()

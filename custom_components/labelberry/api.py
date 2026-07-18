@@ -53,6 +53,25 @@ class QueuedJob:
     error: str | None
 
 
+def _queued_job(payload: Any, operation: str) -> QueuedJob:
+    """Validate and return one queued print job."""
+    if not isinstance(payload, dict):
+        raise LabelBerryResponseError(f"{operation} response must be a JSON object")
+
+    job_id = payload.get("id")
+    status = payload.get("status")
+    response_copies = payload.get("copies")
+    error = payload.get("error")
+    if not isinstance(job_id, str) or not isinstance(status, str):
+        raise LabelBerryResponseError(f"{operation} response has invalid id or status")
+    if isinstance(response_copies, bool) or not isinstance(response_copies, int):
+        raise LabelBerryResponseError(f"{operation} response copies must be an integer")
+    if error is not None and not isinstance(error, str):
+        raise LabelBerryResponseError(f"{operation} response error must be a string or null")
+
+    return QueuedJob(job_id, status, response_copies, error)
+
+
 def normalize_base_url(value: str) -> str:
     """Normalize and validate a LabelBerry HTTP(S) base URL."""
     parsed = urlsplit(value.strip())
@@ -124,21 +143,23 @@ class LabelBerryClient:
         payload = await self._async_request_json(
             "POST", "/api/quick-print", expected_status=201, json=request
         )
-        if not isinstance(payload, dict):
-            raise LabelBerryResponseError("quick-print response must be a JSON object")
+        return _queued_job(payload, "quick-print")
 
-        job_id = payload.get("id")
-        status = payload.get("status")
-        response_copies = payload.get("copies")
-        error = payload.get("error")
-        if not isinstance(job_id, str) or not isinstance(status, str):
-            raise LabelBerryResponseError("quick-print response has invalid id or status")
-        if isinstance(response_copies, bool) or not isinstance(response_copies, int):
-            raise LabelBerryResponseError("quick-print response copies must be an integer")
-        if error is not None and not isinstance(error, str):
-            raise LabelBerryResponseError("quick-print response error must be a string or null")
-
-        return QueuedJob(job_id, status, response_copies, error)
+    async def async_print_template(
+        self,
+        template: str,
+        variables: dict[str, str],
+        *,
+        copies: int = 1,
+    ) -> QueuedJob:
+        """Queue one template-print request without retrying it."""
+        payload = await self._async_request_json(
+            "POST",
+            "/api/templates/print",
+            expected_status=201,
+            json={"name": template, "variables": variables, "copies": copies},
+        )
+        return _queued_job(payload, "template-print")
 
     async def _async_request_json(
         self,

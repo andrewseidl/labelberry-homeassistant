@@ -2,7 +2,7 @@
 
 [LabelBerry](https://github.com/andrewseidl/labelberry) label-printer control from Home
 Assistant. This custom integration reports printer status and adds the
-`labelberry.print_label` action for plain, multiline, and flanked labels.
+`labelberry.print_label` and `labelberry.print_template` actions.
 
 ## Requirements
 
@@ -87,8 +87,20 @@ each text line in the middle box. This keeps the middle text visually centered e
 the two flanks differ.
 
 A successful action means the server accepted the job into its queue, not that printing
-has finished. The integration deliberately does not retry print requests because an
-automatic retry could produce duplicate physical labels.
+has finished.
+
+To print a saved template with variable values:
+
+```yaml
+action: labelberry.print_template
+data:
+  template: Leftovers
+  variables:
+    food: Curry
+  copies: 3
+```
+
+LabelBerry print actions are sent once and are never retried automatically.
 
 ## Troubleshooting
 

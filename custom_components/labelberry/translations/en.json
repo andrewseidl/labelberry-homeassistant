@@ -72,6 +72,24 @@
         }
       },
       "name": "Print label"
+    },
+    "print_template": {
+      "description": "Queue a saved LabelBerry template with variable values.",
+      "fields": {
+        "copies": {
+          "description": "Number of rendered labels to print.",
+          "name": "Copies"
+        },
+        "template": {
+          "description": "Name of the saved LabelBerry template.",
+          "name": "Template"
+        },
+        "variables": {
+          "description": "String values for the template's variables.",
+          "name": "Variables"
+        }
+      },
+      "name": "Print template"
     }
   }
 }

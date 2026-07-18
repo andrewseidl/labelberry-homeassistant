@@ -16,7 +16,13 @@ from .api import (
     LabelBerryConnectionError,
     LabelBerryResponseError,
 )
-from .const import CONF_URL, DOMAIN, PLATFORMS, SERVICE_PRINT_LABEL
+from .const import (
+    CONF_URL,
+    DOMAIN,
+    PLATFORMS,
+    SERVICE_PRINT_LABEL,
+    SERVICE_PRINT_TEMPLATE,
+)
 from .coordinator import LabelBerryCoordinator
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -26,6 +32,15 @@ PRINT_LABEL_SCHEMA = vol.Schema(
         vol.Required("text"): vol.All(cv.string, vol.Length(min=1)),
         vol.Optional("left"): vol.All(cv.string, vol.Length(min=1)),
         vol.Optional("right"): vol.All(cv.string, vol.Length(min=1)),
+        vol.Optional("copies", default=1): vol.All(cv.positive_int, vol.Range(min=1, max=100)),
+    }
+)
+
+VARIABLES_SCHEMA = vol.Schema({str: str})
+PRINT_TEMPLATE_SCHEMA = vol.Schema(
+    {
+        vol.Required("template"): vol.All(cv.string, vol.Length(min=1)),
+        vol.Optional("variables", default={}): VARIABLES_SCHEMA,
         vol.Optional("copies", default=1): vol.All(cv.positive_int, vol.Range(min=1, max=100)),
     }
 )
@@ -42,27 +57,44 @@ class LabelBerryRuntimeData:
 type LabelBerryConfigEntry = ConfigEntry[LabelBerryRuntimeData]
 
 
+def _loaded_client(hass: HomeAssistant) -> LabelBerryClient:
+    """Return the client from the one loaded LabelBerry entry."""
+    loaded = [
+        entry
+        for entry in hass.config_entries.async_entries(DOMAIN)
+        if entry.state is ConfigEntryState.LOADED
+    ]
+    if len(loaded) != 1:
+        raise ServiceValidationError("LabelBerry must be configured and loaded before printing.")
+    return loaded[0].runtime_data.client
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the LabelBerry integration and its print action."""
 
     async def async_print_label(call: ServiceCall) -> None:
-        loaded_entries = [
-            entry
-            for entry in hass.config_entries.async_entries(DOMAIN)
-            if entry.state is ConfigEntryState.LOADED
-        ]
-        if len(loaded_entries) != 1:
-            raise ServiceValidationError(
-                "LabelBerry must be configured and loaded before printing."
-            )
-
-        runtime_data: LabelBerryRuntimeData = loaded_entries[0].runtime_data
+        client = _loaded_client(hass)
         try:
-            await runtime_data.client.async_quick_print(
+            await client.async_quick_print(
                 call.data["text"],
                 copies=call.data["copies"],
                 left=call.data.get("left"),
                 right=call.data.get("right"),
+            )
+        except LabelBerryConnectionError as err:
+            raise HomeAssistantError("Unable to reach the LabelBerry server.") from err
+        except LabelBerryResponseError as err:
+            raise HomeAssistantError("LabelBerry returned an unexpected response.") from err
+        except LabelBerryBackendError as err:
+            raise HomeAssistantError(f"{err.code}: {err.message}") from err
+
+    async def async_print_template(call: ServiceCall) -> None:
+        client = _loaded_client(hass)
+        try:
+            await client.async_print_template(
+                call.data["template"],
+                dict(call.data["variables"]),
+                copies=call.data["copies"],
             )
         except LabelBerryConnectionError as err:
             raise HomeAssistantError("Unable to reach the LabelBerry server.") from err
@@ -77,6 +109,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             SERVICE_PRINT_LABEL,
             async_print_label,
             schema=PRINT_LABEL_SCHEMA,
+        )
+    if not hass.services.has_service(DOMAIN, SERVICE_PRINT_TEMPLATE):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_PRINT_TEMPLATE,
+            async_print_template,
+            schema=PRINT_TEMPLATE_SCHEMA,
         )
 
     return True

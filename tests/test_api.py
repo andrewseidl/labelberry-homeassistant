@@ -15,6 +15,7 @@ from custom_components.labelberry.api import (
 BASE_URL = "http://labelberry.local:8000"
 STATUS_URL = f"{BASE_URL}/api/status"
 PRINT_URL = f"{BASE_URL}/api/quick-print"
+TEMPLATE_PRINT_URL = f"{BASE_URL}/api/templates/print"
 
 
 @pytest.mark.parametrize(
@@ -77,6 +78,50 @@ async def test_quick_print_omits_missing_flanks(hass, aioclient_mock) -> None:
     await client.async_quick_print("Pantry", copies=1)
 
     assert aioclient_mock.mock_calls[-1][2] == {"text": "Pantry", "copies": 1}
+
+
+async def test_template_print_preserves_unicode_variables(hass, aioclient_mock) -> None:
+    aioclient_mock.post(
+        TEMPLATE_PRINT_URL,
+        json={"id": "abc123", "status": "queued", "copies": 2, "error": None},
+        status=201,
+    )
+    client = LabelBerryClient(async_get_clientsession(hass), BASE_URL)
+
+    job = await client.async_print_template("Leftovers", {"food": "Crème 🫐\nA=B"}, copies=2)
+
+    assert aioclient_mock.call_count == 1
+    assert aioclient_mock.mock_calls[-1][2] == {
+        "name": "Leftovers",
+        "variables": {"food": "Crème 🫐\nA=B"},
+        "copies": 2,
+    }
+    assert job == QueuedJob(id="abc123", status="queued", copies=2, error=None)
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        [],
+        {"id": 1, "status": "queued", "copies": 1, "error": None},
+        {"id": "abc123", "status": None, "copies": 1, "error": None},
+        {"id": "abc123", "status": "queued", "copies": True, "error": None},
+        {"id": "abc123", "status": "queued", "copies": 1, "error": 1},
+    ],
+)
+@pytest.mark.parametrize("operation", ["quick", "template"])
+async def test_print_operations_reject_invalid_job_shapes(
+    hass, aioclient_mock, response, operation
+) -> None:
+    url = PRINT_URL if operation == "quick" else TEMPLATE_PRINT_URL
+    aioclient_mock.post(url, json=response, status=201)
+    client = LabelBerryClient(async_get_clientsession(hass), BASE_URL)
+
+    with pytest.raises(LabelBerryResponseError):
+        if operation == "quick":
+            await client.async_quick_print("Pantry")
+        else:
+            await client.async_print_template("Pantry", {})
 
 
 async def test_structured_backend_error_is_preserved(hass, aioclient_mock) -> None:

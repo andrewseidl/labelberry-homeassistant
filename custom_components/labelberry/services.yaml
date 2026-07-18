@@ -26,3 +26,26 @@ print_label:
           max: 100
           step: 1
           mode: box
+print_template:
+  fields:
+    template:
+      required: true
+      example: "Leftovers"
+      selector:
+        text: {}
+    variables:
+      required: false
+      example:
+        food: "Curry"
+      selector:
+        object: {}
+    copies:
+      required: false
+      default: 1
+      example: 1
+      selector:
+        number:
+          min: 1
+          max: 100
+          step: 1
+          mode: box
