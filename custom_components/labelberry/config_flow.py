@@ -9,6 +9,7 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from .api import (
     LabelBerryApiError,
@@ -61,6 +62,33 @@ class LabelBerryConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 user_input[CONF_URL] if user_input else "http://localhost:8000"
             ),
             errors=errors,
+        )
+
+    async def async_step_zeroconf(self, discovery_info: ZeroconfServiceInfo) -> ConfigFlowResult:
+        """Handle a LabelBerry server discovered via mDNS."""
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
+
+        candidate = f"http://{discovery_info.ip_address}:{discovery_info.port}"
+        try:
+            self._discovered_url = await self._async_validate_url(candidate)
+        except LabelBerryApiError:
+            return self.async_abort(reason="cannot_connect")
+
+        self.context["title_placeholders"] = {"url": self._discovered_url}
+        return await self.async_step_zeroconf_confirm()
+
+    async def async_step_zeroconf_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm adding the discovered server."""
+        if user_input is not None:
+            return self.async_create_entry(
+                title="LabelBerry", data={CONF_URL: self._discovered_url}
+            )
+        return self.async_show_form(
+            step_id="zeroconf_confirm",
+            description_placeholders={"url": self._discovered_url},
         )
 
     @override

@@ -24,6 +24,7 @@ def test_hacs_repository_metadata_is_complete() -> None:
         "requirements": [],
         "single_config_entry": True,
         "version": "0.1.0",
+        "zeroconf": ["_labelberry._tcp.local."],
     }
     assert list(manifest) == [
         "domain",
@@ -37,6 +38,7 @@ def test_hacs_repository_metadata_is_complete() -> None:
         "requirements",
         "single_config_entry",
         "version",
+        "zeroconf",
     ]
     assert hacs == {"homeassistant": "2026.7.0", "name": "LabelBerry"}
     assert (INTEGRATION / "brand" / "icon.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n")

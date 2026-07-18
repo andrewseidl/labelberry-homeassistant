@@ -1,7 +1,9 @@
 {
   "domain": "labelberry",
   "name": "LabelBerry",
-  "codeowners": ["@andrewseidl"],
+  "codeowners": [
+    "@andrewseidl"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/andrewseidl/labelberry-homeassistant",
   "integration_type": "device",
@@ -9,5 +11,8 @@
   "issue_tracker": "https://github.com/andrewseidl/labelberry-homeassistant/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.1.0"
+  "version": "0.1.0",
+  "zeroconf": [
+    "_labelberry._tcp.local."
+  ]
 }

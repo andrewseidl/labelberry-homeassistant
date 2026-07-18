@@ -1,6 +1,7 @@
 {
   "config": {
     "abort": {
+      "cannot_connect": "Unable to connect to the discovered LabelBerry server.",
       "reconfigure_successful": "LabelBerry configuration updated.",
       "single_instance_allowed": "Only one LabelBerry server can be configured."
     },
@@ -22,6 +23,21 @@
         },
         "description": "Enter the full URL of your LabelBerry server.",
         "title": "Connect to LabelBerry"
+      },
+      "zeroconf_confirm": {
+        "description": "Add the LabelBerry server discovered at {url}?",
+        "title": "LabelBerry found on your network"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status",
+        "state": {
+          "connected": "Connected",
+          "disconnected": "Disconnected"
+        }
       }
     }
   },
@@ -37,17 +53,6 @@
     },
     "not_configured": {
       "message": "LabelBerry must be configured and loaded before printing."
-    }
-  },
-  "entity": {
-    "sensor": {
-      "status": {
-        "name": "Status",
-        "state": {
-          "connected": "Connected",
-          "disconnected": "Disconnected"
-        }
-      }
     }
   },
   "services": {
