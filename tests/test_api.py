@@ -99,6 +99,50 @@ async def test_template_print_preserves_unicode_variables(hass, aioclient_mock) 
     assert job == QueuedJob(id="abc123", status="queued", copies=2, error=None)
 
 
+@pytest.mark.parametrize("status", [307, 308])
+async def test_template_print_does_not_follow_redirects_or_replay_post(status) -> None:
+    redirected_url = f"{BASE_URL}/redirected/templates/print"
+
+    class Response:
+        def __init__(self, response_status, payload):
+            self.status = response_status
+            self._payload = payload
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return None
+
+        async def json(self, *, content_type=None):
+            return self._payload
+
+    class RedirectingSession:
+        def __init__(self):
+            self.calls = []
+
+        def request(self, method, url, **kwargs):
+            self.calls.append((method, url, kwargs))
+            if kwargs.get("allow_redirects", True):
+                self.calls.append((method, redirected_url, kwargs))
+                return Response(
+                    201,
+                    {"id": "duplicate", "status": "queued", "copies": 1, "error": None},
+                )
+            return Response(status, {"detail": "redirect refused"})
+
+    session = RedirectingSession()
+    client = LabelBerryClient(session, BASE_URL)
+
+    with pytest.raises(LabelBerryResponseError):
+        await client.async_print_template("Pantry", {})
+
+    assert len(session.calls) == 1
+    assert session.calls[0][0] == "POST"
+    assert session.calls[0][1] == TEMPLATE_PRINT_URL
+    assert session.calls[0][2]["allow_redirects"] is False
+
+
 @pytest.mark.parametrize(
     "response",
     [

@@ -173,7 +173,10 @@ class LabelBerryClient:
         try:
             async with asyncio.timeout(REQUEST_TIMEOUT_SECONDS):
                 async with self._session.request(
-                    method, f"{self.base_url}{path}", json=json
+                    method,
+                    f"{self.base_url}{path}",
+                    json=json,
+                    allow_redirects=False,
                 ) as response:
                     try:
                         payload = await response.json(content_type=None)
