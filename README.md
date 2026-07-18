@@ -8,6 +8,8 @@ Assistant. This custom integration reports printer status and adds the
 
 - Home Assistant 2026.7.0 or newer.
 - A reachable LabelBerry server with the status and quick-print API enabled.
+- The `/api/templates/print` endpoint is additionally required when using the
+  `labelberry.print_template` action.
 - A printer and fonts supported by that LabelBerry server. Unicode and emoji rendering
   depends on the server's installed fonts and the printer is monochrome.
 
