@@ -23,7 +23,7 @@ def test_hacs_repository_metadata_is_complete() -> None:
         "name": "LabelBerry",
         "requirements": [],
         "single_config_entry": True,
-        "version": "0.1.0",
+        "version": "0.2.0",
         "zeroconf": ["_labelberry._tcp.local."],
     }
     assert list(manifest) == [
